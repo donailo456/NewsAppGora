@@ -8,5 +8,6 @@
 import Foundation
 
 struct NewsCellModel: Hashable {
-    
+    var id = UUID().uuidString
+    var title: String?
 }

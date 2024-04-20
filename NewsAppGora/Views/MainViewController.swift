@@ -18,11 +18,13 @@ final class MainViewController: UIViewController {
         return collection
     }()
     
-//    private lazy var adapter = CollectionViewAdapter(collectionView: mainCollectionView)
-
+    private lazy var adapter = CollectionViewAdapter(collectionView: mainCollectionView)
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .red
+        setupViews()
+        bindViewModel()
     }
     
     private func setupViews() {
@@ -37,6 +39,19 @@ final class MainViewController: UIViewController {
             mainCollectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             mainCollectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
         ])
+    }
+    
+    private func bindViewModel() {
+        viewModel?.getCurrentWeather(currentSection: .business)
+        viewModel?.getCurrentWeather(currentSection: .generala)
+        
+        viewModel?.onDataReload = { [weak self] data, section in
+            debugPrint(section)
+            self?.adapter.reload(data, section: section)
+        }
+        
+        
+        
     }
 }
 
