@@ -9,8 +9,12 @@ import UIKit
 
 final class MainCollectionViewCell: UICollectionViewCell {
     
+    // MARK: - Internal properties
+    
     static let identifier = "MainCollectionViewCell"
     var urlString: String?
+    
+    // MARK: - Private properties
     
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
@@ -51,6 +55,16 @@ final class MainCollectionViewCell: UICollectionViewCell {
         fatalError("init(coder:) has not been implemented")
     }
     
+    // MARK: - Internal Methods
+    
+    func configure(viewModel: NewsCellModel?) {
+        titleLabel.text = viewModel?.title
+        imageView.image = UIImage(data: viewModel?.iconData ?? Data())
+        urlString = viewModel?.url
+    }
+    
+    // MARK: - Private Methods
+    
     private func setupViews() {
         self.contentView.addSubview(imageView)
         self.contentView.addSubview(titleLabel)
@@ -71,11 +85,5 @@ final class MainCollectionViewCell: UICollectionViewCell {
             imageView.topAnchor.constraint(equalTo: contentView.topAnchor),
             imageView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
         ])
-    }
-    
-    func configure(viewModel: NewsCellModel?) {
-        titleLabel.text = viewModel?.title
-        imageView.image = UIImage(data: viewModel?.iconData ?? Data())
-        urlString = viewModel?.url
     }
 }

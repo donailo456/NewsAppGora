@@ -9,6 +9,8 @@ import Foundation
 
 final class NetworkService {
     
+    // MARK: - Constants
+    
     private enum Constants {
         static let scheme = "https"
         static let host = "newsapi.org"
@@ -16,9 +18,13 @@ final class NetworkService {
         static let pathCurrent = "/v2/top-headlines"
     }
     
+    // MARK: - Private properties
+    
     private let decoder = JSONDecoder()
     private let session = URLSession.shared
     private let cache = NSCache<NSString, NSData>()
+    
+    // MARK: - Internal Methods
     
     func getNews(category: String?, complition: @escaping (Result<[Article]?, NetworkError>) -> Void) {
         let request = URLRequest(url: getURL(Constants.pathCurrent, category: category), cachePolicy: URLRequest.CachePolicy.returnCacheDataElseLoad, timeoutInterval: Double.infinity)
@@ -56,6 +62,8 @@ final class NetworkService {
             }
         }
     }
+    
+    // MARK: - Private Methods
     
     private func getURL(_ path: String, category: String?) -> URL {
         var components = URLComponents()

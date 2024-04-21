@@ -9,7 +9,11 @@ import UIKit
 
 final class MainViewController: UIViewController {
     
+    // MARK: - Internal properties
+    
     var viewModel: MainViewModel?
+    
+    // MARK: - Private properties
     
     private lazy var mainCollectionView: UICollectionView = {
         let layout = createCompositionalLayout()
@@ -52,6 +56,8 @@ final class MainViewController: UIViewController {
         setupViews()
         bindViewModel()
     }
+    
+    // MARK: - Private Methods
     
     private func setupViews() {
         view.addSubview(mainCollectionView)

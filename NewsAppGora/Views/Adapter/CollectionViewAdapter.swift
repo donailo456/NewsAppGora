@@ -9,8 +9,12 @@ import UIKit
 
 final class CollectionViewAdapter: NSObject {
     
+    // MARK: - Internal properties
+    
     typealias DataSource = UICollectionViewDiffableDataSource<Section, NewsCellModel>
     typealias DataSourceSnapshot = NSDiffableDataSourceSnapshot<Section, NewsCellModel>
+    
+    // MARK: - Private properties
     
     private weak var collectionView: UICollectionView?
     private var dataSource: DataSource?
@@ -24,12 +28,7 @@ final class CollectionViewAdapter: NSObject {
         setupCollectionView()
     }
     
-    private func setupCollectionView() {
-        self.collectionView?.delegate = self
-        self.collectionView?.backgroundColor = .white
-        self.collectionView?.register(MainCollectionViewCell.self, forCellWithReuseIdentifier: MainCollectionViewCell.identifier)
-        self.collectionView?.register(SectionHeader.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: SectionHeader.reuserId)
-    }
+    // MARK: - Internal Methods
     
     func reload(_ data: [SectionData]?) {
         guard let detailDataSource = data else { return }
@@ -44,6 +43,15 @@ final class CollectionViewAdapter: NSObject {
         DispatchQueue.main.async {
             self.collectionView?.reloadData()
         }
+    }
+    
+    // MARK: - Private properties
+    
+    private func setupCollectionView() {
+        self.collectionView?.delegate = self
+        self.collectionView?.backgroundColor = .white
+        self.collectionView?.register(MainCollectionViewCell.self, forCellWithReuseIdentifier: MainCollectionViewCell.identifier)
+        self.collectionView?.register(SectionHeader.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: SectionHeader.reuserId)
     }
     
     private func applySnapshot() {
