@@ -15,59 +15,64 @@ final class CollectionViewAdapter: NSObject {
     private weak var collectionView: UICollectionView?
     private var dataSource: DataSource?
     private var snapshot = DataSourceSnapshot()
-    private var cellDataSource: [NewsCellModel]? = []
-    private var cellDataSourceNew: [NewsCellModel] = []
     private var cellDataSourceBus: [NewsCellModel]?
     private var cellDataSourceGen: [NewsCellModel]?
+    private var cellDataSourceEnt: [NewsCellModel]?
+    private var dataTest: [SectionData]?
     private var sections: [Section] = []
-    private var sections2: [SectionData]?
     
     init(collectionView: UICollectionView) {
         super.init()
         self.collectionView = collectionView
+        collectionView.alwaysBounceHorizontal = true
+        collectionView.showsHorizontalScrollIndicator = false
         setupCollectionView()
     }
     
     private func setupCollectionView() {
-        self.collectionView?.backgroundColor = .blue
         self.collectionView?.delegate = self
         self.collectionView?.register(MainCollectionViewCell.self, forCellWithReuseIdentifier: MainCollectionViewCell.identifier)
+        self.collectionView?.register(SectionHeader.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: SectionHeader.reuserId)
     }
     
-    
-    func reload(_ data: [NewsCellModel]?, section: Section) {
+    func reload(_ data: [SectionData]?) {
         guard let detailDataSource = data else { return }
-        sections.append(section)
-        cellDataSource? += data ?? []
-        if section == .business {
-            cellDataSourceBus = data
-        }
-        else {
-            cellDataSourceGen = data
-        }
+        dataTest = detailDataSource
+        sections = detailDataSource.compactMap{ $0.key }
         
         configureCollectionViewDataSource()
         
-        applySnapshot(detailDataSource, section: section)
+        detailDataSource.forEach { element in
+            if element.key == .business {
+                cellDataSourceBus = element.values
+            } else if element.key == .general{
+                cellDataSourceGen = element.values
+            } else {
+                cellDataSourceEnt = element.values
+            }
+        }
         
+        applySnapshot()
+
         DispatchQueue.main.async {
             self.collectionView?.reloadData()
         }
     }
     
-    private func applySnapshot(_ data: [NewsCellModel], section: Section) {
-        guard let snap = dataSource?.snapshot() else { return }
-        snapshot = snap
-        snapshot.appendSections(Section.allCases)
-//        if section == .business {
-            snapshot.appendItems(cellDataSourceBus ?? [], toSection: .business)
-//        } else {
-            snapshot.appendItems(cellDataSourceGen ?? [], toSection: .generala)
-//        }
+    private func applySnapshot() {
+        guard let tempSnapshot = dataSource?.snapshot() else { return }
+        snapshot = tempSnapshot
+        snapshot.appendSections(sections)
         
-        debugPrint("business" ,snapshot.itemIdentifiers(inSection: .business))
-        debugPrint("generala", snapshot.itemIdentifiers(inSection: .generala))
-        debugPrint(snapshot.numberOfItems)
+        dataTest?.forEach { element in
+            snapshot.appendItems(element.values, toSection: element.key)
+//            snapshot.appendItems(cellDataSourceEnt ?? [], toSection: .entertainment)
+//            snapshot.appendItems(cellDataSourceGen ?? [], toSection: .general)
+        }
+//        snapshot.appendItems(cellDataSourceBus ?? [], toSection: .business)
+//        snapshot.appendItems(cellDataSourceEnt ?? [], toSection: .entertainment)
+//        snapshot.appendItems(cellDataSourceGen ?? [], toSection: .general)
+        
         dataSource?.apply(snapshot, animatingDifferences: false)
     }
 }
@@ -77,36 +82,57 @@ final class CollectionViewAdapter: NSObject {
 extension CollectionViewAdapter {
     private func configureCollectionViewDataSource() {
         dataSource = DataSource(collectionView: collectionView ?? UICollectionView(), cellProvider: { (collectionView, indexPath, itemIdentifier) -> UICollectionViewCell? in
-            let cellType = self.sections[indexPath.section]
-            switch cellType {
-            case .business:
-                let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MainCollectionViewCell.identifier, for: indexPath) as? MainCollectionViewCell
-                let cellViewModel = self.cellDataSourceBus?[indexPath.row]
-                cell?.configure(viewModel: cellViewModel)
-                return cell
-            case .generala:
-                let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MainCollectionViewCell.identifier, for: indexPath) as? MainCollectionViewCell
-                let cellViewModel = self.cellDataSourceGen?[indexPath.row]
-                cell?.configure(viewModel: cellViewModel)
-                return cell
+            guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MainCollectionViewCell.identifier, for: indexPath) as? MainCollectionViewCell else { return nil }
+            
+            if let dataTest = self.dataTest {
+                let section = self.sections[indexPath.section]
+                let cellViewModel = dataTest.first(where: { $0.key == section })?.values[indexPath.row]
+                cell.configure(viewModel: cellViewModel)
             }
-        
-        
+            
+            return cell
         })
+        
+        dataSource?.supplementaryViewProvider = { (collectionView, kind, indexPath) in
+            guard let sectionHeader = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: SectionHeader.reuserId, for: indexPath) as? SectionHeader else { return UICollectionReusableView() }
+            guard let first = self.dataSource?.itemIdentifier(for: indexPath) else { return UICollectionReusableView() }
+            guard let section = self.dataSource?.snapshot().sectionIdentifier(containingItem: first) else { return UICollectionReusableView() }
+            
+            switch section {
+            case .business:
+                sectionHeader.title.text = "Business"
+            case .entertainment:
+                sectionHeader.title.text = "Entertainment"
+            case .general:
+                sectionHeader.title.text = "General"
+            case .science:
+                sectionHeader.title.text = "Science"
+            case .sports:
+                sectionHeader.title.text = "Sports"
+            case .technology:
+                sectionHeader.title.text = "Technology"
+            case .health:
+                sectionHeader.title.text = "Health"
+            }
+            
+            return sectionHeader
+        }
     }
 }
 
 //MARK: - UICollectionViewDelegateFlowLayout
 
 extension CollectionViewAdapter: UICollectionViewDelegateFlowLayout {
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        CGSize(width: collectionView.bounds.width - 32, height: collectionView.bounds.height - 80)
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        if let cell = collectionView.cellForItem(at: indexPath) as? MainCollectionViewCell,
+           let urlString = cell.urlString,
+           let url = URL(string: urlString) {
+            UIApplication.shared.open(url)
+        }
     }
     
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
-        UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
-    }
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
-        10
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        CGSize(width: (collectionView.bounds.width - 64) / 2, height: (collectionView.bounds.height - 112) / 3)
     }
 }
+

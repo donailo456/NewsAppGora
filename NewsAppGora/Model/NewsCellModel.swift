@@ -10,4 +10,7 @@ import Foundation
 struct NewsCellModel: Hashable {
     var id = UUID().uuidString
     var title: String?
+    var url: String?
+    let iconURL: String?
+    var iconData: Data?
 }
