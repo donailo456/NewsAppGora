@@ -9,11 +9,11 @@ import Foundation
 
 enum Section: CaseIterable {
     case business
+    case general
+    case entertainment
     case science
     case sports
     case technology
-    case general
-    case entertainment
     case health
     
     var title: String {

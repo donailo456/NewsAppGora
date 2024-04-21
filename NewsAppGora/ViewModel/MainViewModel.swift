@@ -9,14 +9,24 @@ import UIKit
 
 final class MainViewModel: NSObject {
     
+    // MARK: - Internal properties
+    
     weak var coordinator: AppCoordinator!
     var onDataReload: (([SectionData]?) -> Void)?
     var onIsLoading: ((Bool)-> Void)?
     
-    private var networkService = NetworkService()
+    // MARK: - Private properties
+    
+    private var networkService: NetworkService?
     private var dataSource: [Article]?
     private var cellDataSource: [NewsCellModel]?
     private var dataCellSection: [SectionData] = []
+    
+    init(networkService: NetworkService) {
+        self.networkService = networkService
+    }
+    
+    // MARK: - Internal Methods
     
     func getCurrentWeather(currentSection: [Section]) {
         currentSection.forEach {
@@ -24,9 +34,24 @@ final class MainViewModel: NSObject {
         }
     }
     
+    func search(for searchText: String) -> [SectionData] {
+        if searchText == "" {
+            return dataCellSection
+        }
+        else {
+            return self.dataCellSection.compactMap { sectionData in
+                let filteredValues = sectionData.values.filter { $0.title?.localizedCaseInsensitiveContains(searchText) ?? false}
+                guard !filteredValues.isEmpty else { return nil }
+                return SectionData(key: sectionData.key, values: filteredValues)
+            } 
+        }
+    }
+    
+    // MARK: - Private Methods
+    
     private func getNews(currentSection: Section, category: String, page: Int) {
         onIsLoading?(true)
-        networkService.getNews(category: category) { [weak self] result in
+        networkService?.getNews(category: category) { [weak self] result in
             guard let self else { return }
             DispatchQueue.main.async {
                 switch result {
@@ -42,34 +67,27 @@ final class MainViewModel: NSObject {
     }
     
     private func downloadDataIcon(_ section: Section) {
-        guard cellDataSource != nil else { return }
+        guard !dataCellSection.isEmpty else { return }
         
         let group = DispatchGroup()
         let lock = NSLock()
         
         for (indexSnap, snapElement) in dataCellSection.enumerated() {
-            
-            for (index, _) in snapElement.values.enumerated() {
+            for (index, value) in snapElement.values.enumerated() {
+                guard let urlString = value.iconURL, let url = URL(string: urlString) else { continue }
+                guard value.iconData == nil else { continue }
+                
                 group.enter()
-                if let urlString = snapElement.values[index].iconURL, let url = URL(string: urlString) {
-                    if snapElement.values[index].iconData != nil {
+                networkService?.downloadImage(from: url) { [weak self] data in
+                    guard let self = self else { return }
+                    
+                    defer {
                         group.leave()
-                        continue
                     }
                     
-                    networkService.downloadImage(from: url) { [weak self] data in
-                        guard let self = self else { return }
-                        
-                        defer {
-                            group.leave()
-                        }
-                        
-                        lock.lock()
-                        dataCellSection[indexSnap].values[index].iconData = data
-                        lock.unlock()
-                    }
-                } else {
-                    group.leave()
+                    lock.lock()
+                    self.dataCellSection[indexSnap].values[index].iconData = data
+                    lock.unlock()
                 }
             }
         }
@@ -78,6 +96,7 @@ final class MainViewModel: NSObject {
             self.onDataReload?(self.dataCellSection)
         }
     }
+
     
     private func mapCellData(_ section: Section) {
         cellDataSource = sortedPublished(data: dataSource)?.compactMap{ NewsCellModel(title: $0.title, url: $0.url, iconURL: $0.urlToImage) }

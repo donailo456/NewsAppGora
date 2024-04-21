@@ -77,9 +77,9 @@
 			isa = PBXGroup;
 			children = (
 				E4709B322BD1785300130551 /* Application */,
+				E4709B352BD1788900130551 /* Coordinator */,
 				E4709B3A2BD178CD00130551 /* ViewModel */,
 				E4709B312BD1784E00130551 /* Views */,
-				E4709B352BD1788900130551 /* Coordinator */,
 				E4709B4A2BD1AD0E00130551 /* Models */,
 				E4709B402BD1A72300130551 /* Model */,
 				E4709B452BD1ABB100130551 /* Network */,

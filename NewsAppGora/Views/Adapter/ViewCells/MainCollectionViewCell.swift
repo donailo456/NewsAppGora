@@ -31,6 +31,7 @@ final class MainCollectionViewCell: UICollectionViewCell {
         imageView.layer.cornerRadius = 5
         return imageView
     }()
+    
     private lazy var gradientLayer: CAGradientLayer = {
         let layer = CAGradientLayer()
         layer.frame = imageView.bounds

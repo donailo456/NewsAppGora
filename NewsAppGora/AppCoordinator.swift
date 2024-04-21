@@ -23,10 +23,12 @@ final class AppCoordinator: CoordinatorProtocol {
     
     private func showMainVC() {
         let mainViewController = MainViewController()
-        let mainViewModel = MainViewModel.init()
+        let networkService = NetworkService()
+        let mainViewModel = MainViewModel.init(networkService: networkService)
         mainViewModel.coordinator = self
         
         mainViewController.viewModel = mainViewModel
+        navigationController.navigationBar.barTintColor = .white
         navigationController.pushViewController(mainViewController, animated: true)
     }
 }

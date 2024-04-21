@@ -15,43 +15,30 @@ final class CollectionViewAdapter: NSObject {
     private weak var collectionView: UICollectionView?
     private var dataSource: DataSource?
     private var snapshot = DataSourceSnapshot()
-    private var cellDataSourceBus: [NewsCellModel]?
-    private var cellDataSourceGen: [NewsCellModel]?
-    private var cellDataSourceEnt: [NewsCellModel]?
-    private var dataTest: [SectionData]?
+    private var cellDataSource: [SectionData]?
     private var sections: [Section] = []
     
     init(collectionView: UICollectionView) {
         super.init()
         self.collectionView = collectionView
-        collectionView.alwaysBounceHorizontal = true
-        collectionView.showsHorizontalScrollIndicator = false
         setupCollectionView()
     }
     
     private func setupCollectionView() {
         self.collectionView?.delegate = self
+        self.collectionView?.backgroundColor = .white
         self.collectionView?.register(MainCollectionViewCell.self, forCellWithReuseIdentifier: MainCollectionViewCell.identifier)
         self.collectionView?.register(SectionHeader.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: SectionHeader.reuserId)
     }
     
     func reload(_ data: [SectionData]?) {
         guard let detailDataSource = data else { return }
-        dataTest = detailDataSource
+        cellDataSource = detailDataSource
         sections = detailDataSource.compactMap{ $0.key }
+        sections.sort { $0.title < $1.title }
         
         configureCollectionViewDataSource()
-        
-        detailDataSource.forEach { element in
-            if element.key == .business {
-                cellDataSourceBus = element.values
-            } else if element.key == .general{
-                cellDataSourceGen = element.values
-            } else {
-                cellDataSourceEnt = element.values
-            }
-        }
-        
+
         applySnapshot()
 
         DispatchQueue.main.async {
@@ -64,15 +51,9 @@ final class CollectionViewAdapter: NSObject {
         snapshot = tempSnapshot
         snapshot.appendSections(sections)
         
-        dataTest?.forEach { element in
+        cellDataSource?.forEach { element in
             snapshot.appendItems(element.values, toSection: element.key)
-//            snapshot.appendItems(cellDataSourceEnt ?? [], toSection: .entertainment)
-//            snapshot.appendItems(cellDataSourceGen ?? [], toSection: .general)
         }
-//        snapshot.appendItems(cellDataSourceBus ?? [], toSection: .business)
-//        snapshot.appendItems(cellDataSourceEnt ?? [], toSection: .entertainment)
-//        snapshot.appendItems(cellDataSourceGen ?? [], toSection: .general)
-        
         dataSource?.apply(snapshot, animatingDifferences: false)
     }
 }
@@ -84,7 +65,7 @@ extension CollectionViewAdapter {
         dataSource = DataSource(collectionView: collectionView ?? UICollectionView(), cellProvider: { (collectionView, indexPath, itemIdentifier) -> UICollectionViewCell? in
             guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MainCollectionViewCell.identifier, for: indexPath) as? MainCollectionViewCell else { return nil }
             
-            if let dataTest = self.dataTest {
+            if let dataTest = self.cellDataSource {
                 let section = self.sections[indexPath.section]
                 let cellViewModel = dataTest.first(where: { $0.key == section })?.values[indexPath.row]
                 cell.configure(viewModel: cellViewModel)

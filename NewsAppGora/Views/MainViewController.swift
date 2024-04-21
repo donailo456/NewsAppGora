@@ -26,6 +26,23 @@ final class MainViewController: UIViewController {
         return indicator
     }()
     
+    private lazy var searchField: UITextField = {
+        let textField =  UITextField()
+        textField.placeholder = "Поиск"
+        textField.font = .systemFont(ofSize: 15, weight: .bold)
+        textField.borderStyle = .roundedRect
+        textField.layer.cornerRadius = 10.0
+        textField.keyboardType = .default
+        textField.returnKeyType = .done
+        textField.clearButtonMode = .whileEditing
+        textField.contentVerticalAlignment = .center
+        textField.delegate = self
+        textField.translatesAutoresizingMaskIntoConstraints = false
+        textField.backgroundColor = .systemGray5
+        textField.layer.borderColor = UIColor.black.cgColor
+        textField.layer.borderWidth = 2
+        return textField
+    }()
     
     private lazy var adapter = CollectionViewAdapter(collectionView: mainCollectionView)
     
@@ -39,18 +56,23 @@ final class MainViewController: UIViewController {
     private func setupViews() {
         view.addSubview(mainCollectionView)
         view.addSubview(activityIndicator)
+        view.addSubview(searchField)
         setupConstraints()
     }
     
     private func setupConstraints() {
         NSLayoutConstraint.activate([
-            mainCollectionView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            mainCollectionView.topAnchor.constraint(equalTo: searchField.bottomAnchor, constant: 10),
             mainCollectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             mainCollectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             mainCollectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
             
             activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            
+            searchField.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 5),
+            searchField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            searchField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
         ])
     }
     
@@ -103,3 +125,16 @@ final class MainViewController: UIViewController {
     }
 }
 
+//MARK: - UITextFieldDelegate
+
+extension MainViewController: UITextFieldDelegate {
+    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+        adapter.reload(viewModel?.search(for: textField.text ?? ""))
+        return true
+    }
+    
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder();
+        return true
+    }
+}
